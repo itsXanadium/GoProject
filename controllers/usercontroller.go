@@ -1,6 +1,9 @@
 package controllers
 
 import (
+	"math"
+	"strconv"
+
 	"github.com/ADMex1/GoProject/models"
 	"github.com/ADMex1/GoProject/services"
 	"github.com/ADMex1/GoProject/utils"
@@ -71,4 +74,35 @@ func (c *UserController) GetUser(ctx *fiber.Ctx) error {
 	}
 
 	return utils.Success(ctx, "Data Found!", UserRespons)
+}
+
+func (c *UserController) FetchUserPaginated(ctx *fiber.Ctx) error {
+
+	page, _ := strconv.Atoi(ctx.Query("page", "1"))
+	limit, _ := strconv.Atoi(ctx.Query("limit", "10"))
+	offset := (page - 1) * limit
+
+	filter := ctx.Query("filter", "")
+	sort := ctx.Query("sort", "")
+
+	users, total, err := c.service.FetchUsersPaginated(filter, sort, limit, offset)
+	if err != nil {
+		return utils.BadReq(ctx, "Failed to Fetch Data", err.Error())
+	}
+	var userResponse []models.User
+	_ = copier.Copy(&userResponse, &users)
+	meta := utils.PaginationMeta{
+		Page:      page,
+		Limit:     limit,
+		Total:     int(total),
+		TotalPage: int(math.Ceil(float64(total) / float64(limit))),
+		Filter:    filter,
+		Sort:      sort,
+	}
+
+	if total == 0 {
+		return utils.NotFoundPaginated(ctx, "Data Not Found", userResponse, meta)
+	}
+
+	return utils.SuccessPaginated(ctx, "Data Fetched", userResponse, meta)
 }
