@@ -14,6 +14,7 @@ type UserRepository interface {
 	FindByPublicID(publicID string) (*models.User, error)
 	FetchAllWPagination(filter, sort string, limit, offset int) ([]models.User, int64, error)
 	UpdateUser(user *models.User) error
+	DeleteUser(id uint) error
 }
 
 type userRepository struct {
@@ -86,4 +87,8 @@ func (r *userRepository) UpdateUser(user *models.User) error {
 	return config.DB.Model(&models.User{}).Where("public_id = ?", user.PublicID).Updates(map[string]interface{}{
 		"name": user.Name,
 	}).Error
+}
+
+func (r *userRepository) DeleteUser(id uint) error {
+	return config.DB.Delete(&models.User{}, id).Error
 }
