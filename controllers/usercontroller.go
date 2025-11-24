@@ -8,6 +8,7 @@ import (
 	"github.com/ADMex1/GoProject/services"
 	"github.com/ADMex1/GoProject/utils"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/jinzhu/copier"
 )
 
@@ -105,4 +106,32 @@ func (c *UserController) FetchUserPaginated(ctx *fiber.Ctx) error {
 	}
 
 	return utils.SuccessPaginated(ctx, "Data Fetched", userResponse, meta)
+}
+
+func (c *UserController) UserUpdate(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+	publicID, err := uuid.Parse(id)
+	if err != nil {
+		return utils.BadReq(ctx, "invalid ID Format", err.Error())
+	}
+	var user models.User
+	if err := ctx.BodyParser(&user); err != nil {
+		return utils.InternalServerError(ctx, "Failed to Parse Data", err.Error())
+	}
+	user.PublicID = publicID
+
+	if err := c.service.UserUpdate(&user); err != nil {
+		return utils.InternalServerError(ctx, "Failed to update user Data", err.Error())
+	}
+
+	UserUpdated, err := c.service.GetByID(uint(publicID.ID()))
+	if err != nil {
+		return utils.InternalServerError(ctx, "Failed to Fetch Data", err.Error())
+	}
+	var userResponse models.User
+	err = copier.Copy(&userResponse, &UserUpdated)
+	if err != nil {
+		return utils.InternalServerError(ctx, "error data parsing", err.Error())
+	}
+	return utils.Success(ctx, "User Updated!", userResponse)
 }

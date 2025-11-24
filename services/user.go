@@ -15,6 +15,7 @@ type UserService interface {
 	GetByID(id uint) (*models.User, error)
 	GetByPublicID(PublicID string) (*models.User, error)
 	FetchUsersPaginated(filter, sort string, limit, offset int) ([]models.User, int64, error)
+	UserUpdate(user *models.User) error
 }
 
 type userService struct {
@@ -62,4 +63,8 @@ func (s *userService) GetByPublicID(publicID string) (*models.User, error) {
 
 func (s *userService) FetchUsersPaginated(filter, sort string, limit, offset int) ([]models.User, int64, error) {
 	return s.repo.FetchAllWPagination(filter, sort, limit, offset)
+}
+
+func (s *userService) UserUpdate(user *models.User) error {
+	return s.repo.UpdateUser(user)
 }

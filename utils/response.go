@@ -83,3 +83,12 @@ func UnauthorizedAccess(c *fiber.Ctx, Message string, err string) error {
 		Error:        err,
 	})
 }
+
+func InternalServerError(c *fiber.Ctx, Message string, err string) error {
+	return c.Status(fiber.StatusInternalServerError).JSON(response{
+		Status:       "Internal server Error",
+		ResponseCode: fiber.StatusInternalServerError,
+		Message:      Message,
+		Error:        err,
+	})
+}
