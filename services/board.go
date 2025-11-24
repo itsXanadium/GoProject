@@ -11,6 +11,8 @@ import (
 type BoardService interface {
 	//Interface
 	CreateBoard(board *models.Board) error
+	UpdateBoard(board *models.Board) error
+	GetBoardPublicID(publicID string) (*models.Board, error)
 }
 
 type boardService struct {
@@ -32,4 +34,11 @@ func (s *boardService) CreateBoard(board *models.Board) error {
 	board.PublicID = uuid.New()
 	board.OwnerID = users.InternalID
 	return s.BoardRepo.CreateBoard(board)
+}
+func (s *boardService) UpdateBoard(board *models.Board) error {
+	return s.BoardRepo.UpdateBoard(board)
+}
+
+func (s *boardService) GetBoardPublicID(publicID string) (*models.Board, error) {
+	return s.BoardRepo.FindByPublicID(publicID)
 }

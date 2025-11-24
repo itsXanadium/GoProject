@@ -143,3 +143,29 @@ func (c *UserController) DeleteUser(ctx *fiber.Ctx) error {
 	}
 	return utils.Success(ctx, "Deletion Success", id)
 }
+
+func (c *BoardController) UpdateBoard(ctx *fiber.Ctx) error {
+	publicID := ctx.Params("id")
+	board := new(models.Board)
+
+	if err := ctx.BodyParser(board); err != nil {
+		return utils.BadReq(ctx, "Failed to Parse data", err.Error())
+	}
+	if _, err := uuid.Parse(publicID); err != nil {
+		return utils.BadReq(ctx, "ID INVALID", err.Error())
+	}
+	ExistingBoard, err := c.service.GetBoardPublicID(publicID)
+	if err != nil {
+		return utils.NotFound(ctx, "Board not found", err.Error())
+	}
+	board.InternalID = ExistingBoard.InternalID
+	board.PublicID = ExistingBoard.PublicID
+	board.OwnerID = ExistingBoard.OwnerID
+	board.OwnerPublicID = ExistingBoard.OwnerPublicID
+	board.CreatedAt = ExistingBoard.CreatedAt
+
+	if err := c.service.UpdateBoard(board); err != nil {
+		return utils.BadReq(ctx, "Failed to Update board", err.Error())
+	}
+	return utils.Success(ctx, "Board Updated!", board)
+}
