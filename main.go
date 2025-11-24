@@ -23,7 +23,10 @@ func main() {
 	userService := services.NewUserService(userRepo)
 	userController := controllers.NewUserController(userService)
 
-	routes.Setup(app, userController)
+	boardRepo := repositories.NewBoardRepo()
+	boardService := services.NewBoardService(boardRepo, userRepo)
+	boardController := controllers.NewBoardController(boardService)
+	routes.Setup(app, userController, boardController)
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{

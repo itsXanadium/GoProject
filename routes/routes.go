@@ -11,7 +11,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func Setup(app *fiber.App, uc *controllers.UserController) {
+func Setup(app *fiber.App, uc *controllers.UserController, ub *controllers.BoardController) {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error unable to load .env")
@@ -34,4 +34,8 @@ func Setup(app *fiber.App, uc *controllers.UserController) {
 	userGroup.Get("/:id", uc.GetUser)             //Using Public_id to call
 	userGroup.Put("/:id", uc.UserUpdate)
 	userGroup.Delete("/:id", uc.DeleteUser)
+
+	boardGroup := api.Group("/boards")
+	boardGroup.Post("/", ub.CreateBoard)
+
 }

@@ -34,7 +34,7 @@ func (c *UserController) Register(ctx *fiber.Ctx) error {
 	_ = copier.Copy(&UserRespons, user)
 	return utils.Success(ctx, "Registration success!", UserRespons)
 }
-func (l *UserController) Login(ctx *fiber.Ctx) error {
+func (c *UserController) Login(ctx *fiber.Ctx) error {
 	var body struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -42,7 +42,7 @@ func (l *UserController) Login(ctx *fiber.Ctx) error {
 	if err := ctx.BodyParser(&body); err != nil {
 		return utils.BadReq(ctx, "Invalid request", err.Error())
 	}
-	user, err := l.service.Login(body.Email, body.Password)
+	user, err := c.service.Login(body.Email, body.Password)
 	if err != nil {
 		return utils.UnauthorizedAccess(ctx, "login failed", err.Error())
 	}
