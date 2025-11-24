@@ -36,6 +36,6 @@ func Setup(app *fiber.App, uc *controllers.UserController, ub *controllers.Board
 	userGroup.Delete("/:id", uc.DeleteUser)
 
 	boardGroup := api.Group("/boards")
-	boardGroup.Post("/", ub.CreateBoard)
+	boardGroup.Post("/create", ub.CreateBoard)
 
 }

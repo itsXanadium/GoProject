@@ -11,8 +11,8 @@ type Board struct {
 	PublicID      uuid.UUID  `json:"public_id" db:"public_id"`
 	Title         string     `json:"title" db:"title"`
 	Description   string     `json:"description" db:"description"`
-	OwnerID       int64      `json:"owner_id" db:"owner_id"`
+	OwnerID       int64      `json:"owner_internal_id" gorm:"column:owner_internal_id"`
 	OwnerPublicID uuid.UUID  `json:"owner_public_id" db:"owner_public_id"`
 	CreatedAt     time.Time  `json:"created_at" db:"created_at"`
-	Duedate       *time.Time `json:"duedate,omitempty" db:"duedate"`
+	Duedate       *time.Time `json:"due_date,omitempty" gorm:"column:due_date"`
 }
