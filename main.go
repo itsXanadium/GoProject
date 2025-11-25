@@ -22,10 +22,12 @@ func main() {
 	userRepo := repositories.NewUserRepository()
 	userService := services.NewUserService(userRepo)
 	userController := controllers.NewUserController(userService)
+	boardMemberRepo := repositories.NewMemberRepository()
 
 	boardRepo := repositories.NewBoardRepo()
-	boardService := services.NewBoardService(boardRepo, userRepo)
+	boardService := services.NewBoardService(boardRepo, userRepo, boardMemberRepo)
 	boardController := controllers.NewBoardController(boardService)
+
 	routes.Setup(app, userController, boardController)
 
 	app.Get("/", func(c *fiber.Ctx) error {

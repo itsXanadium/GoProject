@@ -40,3 +40,16 @@ func (c *BoardController) CreateBoard(ctx *fiber.Ctx) error {
 	}
 	return utils.Success(ctx, "Board Created!", board)
 }
+
+func (c *BoardController) AddBoardMember(ctx *fiber.Ctx) error {
+	publicID := ctx.Params("id")
+
+	var userIds []string
+	if err := ctx.BodyParser(&userIds); err != nil {
+		return utils.BadReq(ctx, "failed to parse data", err.Error())
+	}
+	if err := c.service.AddMemeber(publicID, userIds); err != nil {
+		return utils.BadReq(ctx, "Failed to add new member!", err.Error())
+	}
+	return utils.Success(ctx, "New Member Added!", nil)
+}

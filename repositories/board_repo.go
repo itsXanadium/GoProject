@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"time"
+
 	"github.com/ADMex1/GoProject/config"
 	"github.com/ADMex1/GoProject/models"
 )
@@ -10,6 +12,7 @@ type BoardRepository interface {
 	CreateBoard(board *models.Board) error
 	UpdateBoard(board *models.Board) error
 	FindByPublicID(publicID string) (*models.Board, error)
+	AddMember(boardID uint, userIDs []uint) error
 }
 
 type boardRepository struct {
@@ -37,4 +40,21 @@ func (r *boardRepository) FindByPublicID(publicID string) (*models.Board, error)
 	var board models.Board
 	err := config.DB.Where("public_id = ?", publicID).First(&board).Error
 	return &board, err
+}
+
+func (r *boardRepository) AddMember(boardID uint, userIDs []uint) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+	now := time.Now()
+	var members []models.BoardMember
+
+	for _, userID := range userIDs {
+		members = append(members, models.BoardMember{
+			BoardID:  int64(boardID),
+			UserID:   int64(userID),
+			JoinedAt: now,
+		})
+	}
+	return config.DB.Create(&members).Error
 }

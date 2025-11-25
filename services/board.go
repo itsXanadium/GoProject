@@ -13,17 +13,19 @@ type BoardService interface {
 	CreateBoard(board *models.Board) error
 	UpdateBoard(board *models.Board) error
 	GetBoardPublicID(publicID string) (*models.Board, error)
+	AddMemeber(boardPublicID string, userPublicIDs []string) error
 }
 
 type boardService struct {
 	//Struct
-	BoardRepo repositories.BoardRepository
-	userRepo  repositories.UserRepository
+	BoardRepo   repositories.BoardRepository
+	userRepo    repositories.UserRepository
+	BoardMember repositories.BoardMemberRepository
 }
 
-func NewBoardService(boardRepo repositories.BoardRepository, userRepo repositories.UserRepository,
+func NewBoardService(boardRepo repositories.BoardRepository, userRepo repositories.UserRepository, boardMember repositories.BoardMemberRepository,
 ) BoardService {
-	return &boardService{boardRepo, userRepo}
+	return &boardService{boardRepo, userRepo, boardMember}
 }
 
 func (s *boardService) CreateBoard(board *models.Board) error {
@@ -41,4 +43,41 @@ func (s *boardService) UpdateBoard(board *models.Board) error {
 
 func (s *boardService) GetBoardPublicID(publicID string) (*models.Board, error) {
 	return s.BoardRepo.FindByPublicID(publicID)
+}
+
+func (s *boardService) AddMemeber(boardPublicID string, userPublicIDs []string) error {
+	board, err := s.BoardRepo.FindByPublicID(boardPublicID)
+	if err != nil {
+		return errors.New("board not found")
+	}
+
+	var UserInternalIDs []uint
+	for _, userPublicID := range userPublicIDs {
+		user, err := s.userRepo.FindByPublicID(userPublicID)
+		if err != nil {
+			return errors.New("user not found")
+		}
+		UserInternalIDs = append(UserInternalIDs, uint(user.InternalID))
+	}
+	//Members
+	existingMember, err := s.BoardMember.GetMembers(string(board.PublicID.String()))
+	if err != nil {
+		return err
+	}
+	//quick check
+	memberMap := make(map[uint]bool)
+	for _, member := range existingMember {
+		memberMap[uint(member.InternalID)] = true //memberMap[1] == True
+	}
+
+	var NewMemberIDs []uint
+	for _, userID := range UserInternalIDs {
+		if !memberMap[userID] {
+			NewMemberIDs = append(NewMemberIDs, userID)
+		}
+	}
+	if len(NewMemberIDs) == 0 {
+		return nil
+	}
+	return s.BoardRepo.AddMember(uint(board.InternalID), NewMemberIDs)
 }
