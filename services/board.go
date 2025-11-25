@@ -15,6 +15,7 @@ type BoardService interface {
 	GetBoardPublicID(publicID string) (*models.Board, error)
 	AddMemeber(boardPublicID string, userPublicIDs []string) error
 	RemoveMember(boardPublicID string, userPublicIDs []string) error
+	FetchAllPaginatedViaUser(userID, filter, sort string, limit, offset int) ([]models.Board, int64, error)
 }
 
 type boardService struct {
@@ -119,4 +120,8 @@ func (s *boardService) RemoveMember(boardPublicID string, userPublicIDs []string
 	}
 
 	return s.BoardRepo.RemoveMembers(uint(board.InternalID), RemovingMember)
+}
+
+func (s *boardService) FetchAllPaginatedViaUser(userID, filter, sort string, limit, offset int) ([]models.Board, int64, error) {
+	return s.BoardRepo.FetchAllPaginatedViaUser(userID, filter, sort, limit, offset)
 }

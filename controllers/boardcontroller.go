@@ -1,6 +1,9 @@
 package controllers
 
 import (
+	"math"
+	"strconv"
+
 	"github.com/ADMex1/GoProject/models"
 	"github.com/ADMex1/GoProject/services"
 	"github.com/ADMex1/GoProject/utils"
@@ -59,4 +62,32 @@ func (c *BoardController) RemoveBoardMember(ctx *fiber.Ctx) error {
 		return utils.BadReq(ctx, "Failed to Remove Members from the Board!", err.Error())
 	}
 	return utils.Success(ctx, "Members has Been Removed", nil)
+}
+
+func (c *BoardController) FetchMyBoardPaginated(ctx *fiber.Ctx) error {
+	user := ctx.Locals("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	userID := claims["pub_id"].(string)
+
+	page, _ := strconv.Atoi(ctx.Query("page", "1"))
+	limit, _ := strconv.Atoi(ctx.Query("limit", "10"))
+	offset := (page - 1) * limit
+
+	filter := ctx.Query("filter", "")
+	sort := ctx.Query("sort", "")
+
+	boards, total, err := c.service.FetchAllPaginatedViaUser(userID, filter, sort, limit, offset)
+	if err != nil {
+		return utils.InternalServerError(ctx, "Failed to fetch Board Data", err.Error())
+	}
+
+	meta := utils.PaginationMeta{
+		Page:      page,
+		Limit:     limit,
+		Total:     int(total),
+		TotalPage: int(math.Ceil(float64(total) / float64(limit))),
+		Filter:    filter,
+		Sort:      sort,
+	}
+	return utils.SuccessPaginated(ctx, "Data Fetched", boards, meta)
 }
