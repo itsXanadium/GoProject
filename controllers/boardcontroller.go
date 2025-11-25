@@ -52,7 +52,7 @@ func (c *BoardController) AddBoardMember(ctx *fiber.Ctx) error {
 func (c *BoardController) RemoveBoardMember(ctx *fiber.Ctx) error {
 	publicID := ctx.Params("id")
 	var userIDs []string
-	if err := ctx.BodyParser(userIDs); err != nil {
+	if err := ctx.BodyParser(&userIDs); err != nil {
 		return utils.BadReq(ctx, "Failed to Parse Data", err.Error())
 	}
 	if err := c.service.RemoveMember(publicID, userIDs); err != nil {

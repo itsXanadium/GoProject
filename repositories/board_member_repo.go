@@ -29,5 +29,3 @@ func (r *BoardMemberRepositorys) GetMembers(boardPublicID string) ([]models.User
 		Find(&user).Error
 	return user, err
 }
-
-//board_internal_id
