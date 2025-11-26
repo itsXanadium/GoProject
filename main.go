@@ -10,6 +10,7 @@ import (
 	"github.com/ADMex1/GoProject/routes"
 	"github.com/ADMex1/GoProject/services"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
 func main() {
@@ -18,7 +19,7 @@ func main() {
 
 	seeder.AdminSeeder()
 	app := fiber.New()
-
+	app.Use(logger.New())
 	userRepo := repositories.NewUserRepository()
 	userService := services.NewUserService(userRepo)
 	userController := controllers.NewUserController(userService)
