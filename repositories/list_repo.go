@@ -14,7 +14,8 @@ type ListRepository interface {
 	UpdatePosition(boardPublicID string, position []string) error
 	FetchCardPosition(listPublicID string) ([]uuid.UUID, error)
 	FetchByBoardID(boardID string) ([]models.List, error)
-	FetchByID(id string) (*models.List, error)
+	FetchByID(id uint) (*models.List, error)
+	FetchByPublicID(publicID string) (*models.List, error)
 }
 
 type ListRepositorys struct {
@@ -57,8 +58,14 @@ func (r *ListRepositorys) FetchByBoardID(boardID string) ([]models.List, error) 
 	return list, err
 }
 
-func (r *ListRepositorys) FetchByID(publicID string) (*models.List, error) {
+func (r *ListRepositorys) FetchByPublicID(publicID string) (*models.List, error) {
 	var list models.List
 	err := config.DB.Where("public_id = ?", publicID).First(&list).Error
+	return &list, err
+}
+
+func (r *ListRepositorys) FetchByID(id uint) (*models.List, error) {
+	var list models.List
+	err := config.DB.First(&list, id).Error
 	return &list, err
 }

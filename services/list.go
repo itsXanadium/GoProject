@@ -2,11 +2,15 @@ package services
 
 import (
 	"errors"
+	"fmt"
 
+	"github.com/ADMex1/GoProject/config"
 	"github.com/ADMex1/GoProject/models"
+	"github.com/ADMex1/GoProject/models/types"
 	"github.com/ADMex1/GoProject/repositories"
 	"github.com/ADMex1/GoProject/utils"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type ListWithOrder struct {
@@ -17,9 +21,9 @@ type ListWithOrder struct {
 type ListService interface {
 	//interface
 	FetchByBoardID(boardPublicID string) (*ListWithOrder, error)
-	// FetchByID(id string) (*models.List, error)
-	// FetchByPublicID(publicID string) (*models.List, error)
-	// CreateList(list *models.List) error
+	FetchByID(id uint) (*models.List, error)
+	FetchByPublicID(publicID string) (*models.List, error)
+	CreateList(list *models.List) error
 	// UpdateList(list *models.List) error
 	// DeleteList(id uint) error
 	// UpdateListPosition(boardPublicID string, pos []uuid.UUID) error
@@ -58,5 +62,70 @@ func (s *ListServices) FetchByBoardID(boardPublicID string) (*ListWithOrder, err
 	}, nil
 }
 
-// func (s *ListServices) CreateList(list *models.List) error {
-// }
+func (s *ListServices) FetchByID(id uint) (*models.List, error) {
+	return s.listRepo.FetchByID(id)
+}
+
+func (s *ListServices) FetchByPublicID(publicID string) (*models.List, error) {
+	return s.listRepo.FetchByPublicID(publicID)
+}
+
+func (s *ListServices) CreateList(list *models.List) error {
+	//Validate Board
+	board, err := s.boardRepo.FindByPublicID(string(list.BoardPublicId.String()))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("board not found")
+		}
+		return fmt.Errorf("failed to fetch board: %v", err)
+	}
+	list.BoardInternalId = board.InternalID
+
+	if list.PublicID == uuid.Nil {
+		list.PublicID = uuid.New()
+	}
+
+	trax := config.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			trax.Rollback()
+		}
+	}()
+	//Store new list
+	if err := trax.Create(list).Error; err != nil {
+		trax.Rollback()
+		return fmt.Errorf("failed to create list: %v", err)
+	}
+	//update pos
+	var pos models.ListPosition
+	res := trax.Where("board_internal_id = ? ", board.InternalID).First(&pos)
+	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+		//Create new if not exist
+		pos := models.ListPosition{
+			PublicID:  uuid.New(),
+			BoardID:   board.InternalID,
+			ListOrder: types.UUIDArray{list.PublicID},
+		}
+		if err := trax.Create(&pos).Error; err != nil {
+			trax.Rollback()
+			return fmt.Errorf("failed to create list position: %v", err)
+		}
+	} else if res.Error != nil {
+		trax.Rollback()
+		return fmt.Errorf("failed to create list position: %v", res.Error)
+
+	}
+	//add new id
+	pos.ListOrder = append(pos.ListOrder, list.PublicID)
+	//update to Db
+	if err := trax.Model(&pos).Update("list_order", pos.ListOrder).Error; err != nil {
+		trax.Rollback()
+		return fmt.Errorf("failed to update list position: %v", err)
+	}
+
+	//Commit trax
+	if err := trax.Commit().Error; err != nil {
+		return fmt.Errorf("transation commit failed: %v", err)
+	}
+	return nil
+}
