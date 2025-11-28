@@ -31,7 +31,7 @@ func (r *ListPositionRepositorys) FetchByBoard(boardPublicID string) (*models.Li
 func (r *ListPositionRepositorys) CreateOrUpdate(boardPublicID string, listOrder []uuid.UUID) error {
 	return config.DB.Exec(`
 INSERT INTO list_position (board_internal_id, list_order)
-SELECT internal_id, ? FROM boards Where public_id = ?  
+SELECT internal_id, ? FROM boards WHERE public_id = ?  
 ON CONFLICT (board_internal_id)
 DO UPDATE SET list_order = EXCLUDE.list_order)`, listOrder, boardPublicID).Error
 }

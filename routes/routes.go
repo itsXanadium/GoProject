@@ -11,7 +11,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func Setup(app *fiber.App, uc *controllers.UserController, ub *controllers.BoardController) {
+func Setup(app *fiber.App, uc *controllers.UserController, bc *controllers.BoardController, lc *controllers.ListController) {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error unable to load .env")
@@ -36,9 +36,12 @@ func Setup(app *fiber.App, uc *controllers.UserController, ub *controllers.Board
 	userGroup.Delete("/:id", uc.DeleteUser)
 
 	boardGroup := api.Group("/boards")
-	boardGroup.Post("/create", ub.CreateBoard)
-	boardGroup.Put("/:id", ub.UpdateBoard)
-	boardGroup.Post("/:id/add/members", ub.AddBoardMember)
-	boardGroup.Delete("/:id/remove/members", ub.RemoveBoardMember)
-	boardGroup.Get("/my", ub.FetchMyBoardPaginated)
+	boardGroup.Post("/create", bc.CreateBoard)
+	boardGroup.Put("/:id", bc.UpdateBoard)
+	boardGroup.Post("/:id/add/members", bc.AddBoardMember)
+	boardGroup.Delete("/:id/remove/members", bc.RemoveBoardMember)
+	boardGroup.Get("/my", bc.FetchMyBoardPaginated)
+
+	listGroup := api.Group("/list")
+	listGroup.Post("/create", lc.CreateList)
 }

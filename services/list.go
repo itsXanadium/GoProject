@@ -24,9 +24,9 @@ type ListService interface {
 	FetchByID(id uint) (*models.List, error)
 	FetchByPublicID(publicID string) (*models.List, error)
 	CreateList(list *models.List) error
-	// UpdateList(list *models.List) error
-	// DeleteList(id uint) error
-	// UpdateListPosition(boardPublicID string, pos []uuid.UUID) error
+	UpdateList(list *models.List) error
+	DeleteList(id uint) error
+	UpdateListPosition(boardPublicID string, positions []uuid.UUID) error
 }
 
 type ListServices struct {
@@ -98,7 +98,7 @@ func (s *ListServices) CreateList(list *models.List) error {
 	}
 	//update pos
 	var pos models.ListPosition
-	res := trax.Where("board_internal_id = ? ", board.InternalID).First(&pos)
+	res := trax.Where("board_internal_id = ?", board.InternalID).First(&pos)
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		//Create new if not exist
 		pos := models.ListPosition{
@@ -118,7 +118,7 @@ func (s *ListServices) CreateList(list *models.List) error {
 	//add new id
 	pos.ListOrder = append(pos.ListOrder, list.PublicID)
 	//update to Db
-	if err := trax.Model(&pos).Update("list_order", pos.ListOrder).Error; err != nil {
+	if err := trax.Model(&pos).Where("internal_id = ?", pos.InternalID).Update("list_order", pos.ListOrder).Error; err != nil {
 		trax.Rollback()
 		return fmt.Errorf("failed to update list position: %v", err)
 	}
@@ -128,4 +128,29 @@ func (s *ListServices) CreateList(list *models.List) error {
 		return fmt.Errorf("transation commit failed: %v", err)
 	}
 	return nil
+}
+
+func (s *ListServices) UpdateList(list *models.List) error {
+	return s.listRepo.UpdateList(list)
+}
+
+func (s *ListServices) DeleteList(id uint) error {
+	//
+	return s.listRepo.DeleteList(id)
+}
+
+func (s *ListServices) UpdateListPosition(boardPublicID string, positions []uuid.UUID) error {
+	//Verify
+	board, err := s.boardRepo.FindByPublicID(boardPublicID)
+	if err != nil {
+		return errors.New("board not found")
+	}
+	//Fetch List Pos
+	position, err := s.listPosition.FetchByBoard(board.PublicID.String())
+	if err != nil {
+		return errors.New("position not found")
+	}
+	//update list order
+	position.ListOrder = positions
+	return s.listPosition.UpdateListOrder(position)
 }

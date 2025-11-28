@@ -11,7 +11,7 @@ type ListRepository interface {
 	CreateList(list *models.List) error
 	UpdateList(list *models.List) error
 	DeleteList(id uint) error
-	UpdatePosition(boardPublicID string, position []string) error
+	UpdatePosition(boardPublicID string, positions []string) error
 	FetchCardPosition(listPublicID string) ([]uuid.UUID, error)
 	FetchByBoardID(boardID string) ([]models.List, error)
 	FetchByID(id uint) (*models.List, error)
@@ -41,8 +41,8 @@ func (r *ListRepositorys) DeleteList(id uint) error {
 	return config.DB.Delete(&models.List{}, id).Error
 }
 
-func (r *ListRepositorys) UpdatePosition(boardPublicID string, position []string) error {
-	return config.DB.Model(&models.ListPosition{}).Where("board_internal_id = (Select internal_id FROM boards Where public_id = ?)", boardPublicID).Update("list_order", position).Error
+func (r *ListRepositorys) UpdatePosition(boardPublicID string, positions []string) error {
+	return config.DB.Model(&models.ListPosition{}).Where("board_internal_id = (Select internal_id FROM boards Where public_id = ?)", boardPublicID).Update("list_order", positions).Error
 }
 
 func (r *ListRepositorys) FetchCardPosition(listPublicID string) ([]uuid.UUID, error) {
