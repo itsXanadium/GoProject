@@ -68,3 +68,20 @@ func (c *ListController) FetchListOnBoard(ctx *fiber.Ctx) error {
 	}
 	return utils.Success(ctx, "List Fetched", list)
 }
+
+func (c *ListController) DeleteList(ctx *fiber.Ctx) error {
+	publicID := ctx.Params("id")
+	if _, err := uuid.Parse(publicID); err != nil {
+		return utils.NotFound(ctx, "INVALID ID", err.Error())
+	}
+
+	lists, err := c.service.FetchByPublicID(publicID)
+	if err != nil {
+		return utils.NotFound(ctx, "List Not Found", err.Error())
+	}
+
+	if err := c.service.DeleteList(uint(lists.InternalID)); err != nil {
+		return utils.InternalServerError(ctx, "Failed to delete list", err.Error())
+	}
+	return utils.Success(ctx, "List deleted", publicID)
+}
