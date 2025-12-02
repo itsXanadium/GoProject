@@ -40,6 +40,7 @@ func Setup(app *fiber.App, uc *controllers.UserController, bc *controllers.Board
 	boardGroup.Put("/:id", bc.UpdateBoard)
 	boardGroup.Post("/:id/add/members", bc.AddBoardMember)
 	boardGroup.Delete("/:id/remove/members", bc.RemoveBoardMember)
+	boardGroup.Get("/:board_id/list", lc.FetchListOnBoard)
 	boardGroup.Get("/my", bc.FetchMyBoardPaginated)
 
 	listGroup := api.Group("/list")

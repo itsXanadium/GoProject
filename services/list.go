@@ -54,6 +54,8 @@ func (s *ListServices) FetchByBoardID(boardPublicID string) (*ListWithOrder, err
 	if err != nil {
 		return nil, errors.New("failed to fetch board: " + err.Error())
 	}
+	fmt.Println(pos)
+	fmt.Println(list)
 	//Sort by pos
 	orderedlist := utils.SortListByPos(list, pos)
 	return &ListWithOrder{

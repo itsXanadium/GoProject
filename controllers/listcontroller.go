@@ -54,3 +54,17 @@ func (c *ListController) UpdateList(ctx *fiber.Ctx) error {
 	}
 	return utils.Success(ctx, "List updated", updatedList)
 }
+
+func (c *ListController) FetchListOnBoard(ctx *fiber.Ctx) error {
+	boardPublicID := ctx.Params("board_id")
+
+	if _, err := uuid.Parse(boardPublicID); err != nil {
+		return utils.BadReq(ctx, "Invalid ID", err.Error())
+	}
+
+	list, err := c.service.FetchByBoardID(boardPublicID)
+	if err != nil {
+		return utils.NotFound(ctx, "List Not Found", err.Error())
+	}
+	return utils.Success(ctx, "List Fetched", list)
+}
