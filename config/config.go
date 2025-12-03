@@ -27,6 +27,7 @@ type Config struct {
 	JWTExpireMinutes string
 	JWTRefreshToken  string
 	JWTExpire        string
+	APPURL           string
 }
 
 func LoadEnv() {
@@ -45,6 +46,7 @@ func LoadEnv() {
 		JWTExpire:        getEnv("JWT_EXPIRATION", "24h"),
 		JWTExpireMinutes: getEnv("JWT_EXPIRY_MINUTES", "60"),
 		JWTRefreshToken:  getEnv("REFRESH_TOKEN_EXPIRED", "24h"),
+		APPURL:           getEnv("APP_URL", "http://localhost:3000"),
 	}
 }
 
