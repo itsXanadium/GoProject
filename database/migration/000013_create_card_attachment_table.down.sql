@@ -1,0 +1,1 @@
+DROP IF EXIST card_attachment;

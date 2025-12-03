@@ -1,0 +1,1 @@
+drop if exist card_assignments;
