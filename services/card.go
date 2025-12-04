@@ -92,3 +92,80 @@ func (s *CardServices) CreateCard(card *models.Card, listPublicID string) error 
 	}
 	return nil
 }
+
+func (s *CardServices) UpdateCard(card *models.Card, listPublicID string) error {
+	oldCard, err := s.CardRepo.FetchCardPublicID(card.PublicID.String())
+	if err != nil {
+		return fmt.Errorf("card not found: %v", err)
+	}
+	newList, err := s.ListRepo.FetchByPublicID(listPublicID)
+	if err != nil {
+		return fmt.Errorf("list not found: %v", err)
+	}
+	trax := config.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			trax.Rollback()
+			panic(r)
+		}
+	}()
+	if oldCard.ListID != newList.InternalID {
+		//Remove old list
+		var oldPos models.CardPosition
+		if err := trax.Where("list_internal_id = ?", oldCard.ListID).
+			First(&oldPos).Error; err != nil {
+			filtered := make(types.UUIDArray, 0, len(oldPos.CardOrder))
+			for _, id := range oldPos.CardOrder {
+				if id != oldCard.PublicID {
+					filtered = append(filtered, id)
+				}
+			}
+			if err := trax.Model(&models.CardPosition{}).Where("internal_id = ?", oldPos.InternalID).
+				Update("card_order", types.UUIDArray(filtered)).Error; err != nil {
+				trax.Rollback()
+				return fmt.Errorf("failed to update old card position: %v", err)
+			}
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			trax.Rollback()
+			fmt.Errorf("failed to fetch old card position: %v", err)
+		}
+		var newPos models.CardPosition
+		res := trax.Where("list_internal_id = ?", newList.InternalID).
+			First(&newPos)
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			newPos = models.CardPosition{
+				PublicID:  uuid.New(),
+				ListID:    newList.InternalID,
+				CardOrder: types.UUIDArray{oldCard.PublicID},
+			}
+			if err := trax.Create(&newPos).Error; err != nil {
+				trax.Rollback()
+				return fmt.Errorf("failed to create card position for new list: %v", err)
+			}
+		} else if res.Error == nil {
+			//append
+			UpdateOrder := append(newPos.CardOrder, card.PublicID)
+			if err := trax.Model(&models.CardPosition{}).
+				Where("internal_id = ?", newPos.InternalID).
+				Update("card_order", types.UUIDArray(UpdateOrder)).Error; err != nil {
+				trax.Rollback()
+				return fmt.Errorf("failed to update card position: %v", err)
+			}
+		} else {
+			trax.Rollback()
+			return fmt.Errorf("failed to get new card position: %v", res.Error)
+		}
+	}
+	card.InternalID = oldCard.InternalID
+	card.PublicID = oldCard.PublicID
+	card.ListID = oldCard.ListID
+	if err := trax.Save(card).Error; err != nil {
+		trax.Rollback()
+		return fmt.Errorf("failed to update card: %v", err)
+	}
+	return nil
+}
+
+func (s *CardServices) DeleteCard(id uint) error {
+	return s.CardRepo.DeleteCard(id)
+}
