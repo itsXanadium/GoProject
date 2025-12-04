@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/ADMex1/GoProject/config"
@@ -127,7 +128,7 @@ func (s *CardServices) UpdateCard(card *models.Card, listPublicID string) error 
 			}
 		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 			trax.Rollback()
-			fmt.Errorf("failed to fetch old card position: %v", err)
+			return fmt.Errorf("failed to fetch old card position: %v", err)
 		}
 		var newPos models.CardPosition
 		res := trax.Where("list_internal_id = ?", newList.InternalID).
@@ -168,4 +169,60 @@ func (s *CardServices) UpdateCard(card *models.Card, listPublicID string) error 
 
 func (s *CardServices) DeleteCard(id uint) error {
 	return s.CardRepo.DeleteCard(id)
+}
+
+func (s *CardServices) FetchByListID(listPublicID string) ([]models.Card, error) {
+	//Verify list
+	list, err := s.ListRepo.FetchByPublicID(listPublicID)
+	if err != nil {
+		return nil, fmt.Errorf("list not found: %v", err)
+	}
+	//Fetch card pos
+	pos, err := s.CardRepo.FetchCardPositionbyListID(list.InternalID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch card position: %v", err)
+	}
+	//Fetch all card in List
+	cards, err := s.CardRepo.FindByListID(listPublicID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch the cards: %v", err)
+	}
+	//sorting
+	if pos != nil && len(pos.CardOrder) > 0 {
+		cards = sortCardByPosition(cards, pos.CardOrder)
+	}
+	return cards, nil
+}
+
+func sortCardByPosition(cards []models.Card, order []uuid.UUID) []models.Card {
+	//Map for fast Search
+	orderMap := make(map[uuid.UUID]int)
+	for i, id := range order {
+		orderMap[id] = i
+	}
+	defaultIndex := len(order)
+
+	sort.SliceStable(cards, func(i, j int) bool {
+		idxI, okI := orderMap[cards[i].PublicID]
+		if !okI {
+			idxI = defaultIndex
+		}
+		idxJ, okJ := orderMap[cards[j].PublicID]
+		if !okJ {
+			idxJ = defaultIndex
+		}
+		if idxI == idxJ {
+			return cards[i].CreatedAt.Before(cards[j].CreatedAt)
+		}
+		return idxI < idxJ
+	})
+	return cards
+}
+
+func (s *CardServices) FetchByCardID(id uint) (*models.Card, error) {
+	return s.CardRepo.FetchCardID(id)
+}
+
+func (s *CardServices) FetchByCardPublicID(publicID string) (*models.Card, error) {
+	return s.CardRepo.FetchCardPublicID(publicID)
 }
