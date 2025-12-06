@@ -12,12 +12,15 @@ type Card struct {
 	ListID      int64      `json:"list_internal_id" db:"list_internal_id" gorm:"column:list_internal_id"`
 	Title       string     `json:"title" db:"title"`
 	Description string     `json:"description" db:"description"`
-	Duedate     *time.Time `json:"due_date,omitempty" db:"duedate"`
+	Duedate     *time.Time `json:"due_date,omitempty" gorm:"column:due_date"`
 	Position    int        `json:"position" db:"position"`
 	CreatedAt   time.Time  `json:"created_at" db:"created_at" gorm:"autoCreateTime"`
 
 	//Relation
-	Assignee    []CardAssignment  `json:"assignees,omitempty" gorm:"foreignKey:CardID;referenceInternalID"`
-	Attatchment []CardAttatchment `json:"attachment,omitempty" gorm:"foreignKey:CardID;referenceInternalID"`
-	Labels      []Label           `json:"Labels,omitempty" gorm:"foreignKey:CardID;referenceInternalID"`
+	Assignee    []CardAssignment  `json:"assignees,omitempty" gorm:"foreignKey:CardID;references:InternalID"`
+	Attatchment []CardAttatchment `json:"attachment,omitempty" gorm:"foreignKey:CardID;references:InternalID"`
+	Labels      []Label           `json:"Labels,omitempty" gorm:"foreignKey:CardID;references:InternalID"`
+
+	// Attatchment []CardAttatchment `json:"attachment,omitempty" gorm:"-"`
+	// Labels      []Label           `json:"Labels,omitempty" gorm:"-"`
 }

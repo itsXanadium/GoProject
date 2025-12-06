@@ -47,7 +47,7 @@ func (r *ListRepositorys) UpdatePosition(boardPublicID string, positions []strin
 
 func (r *ListRepositorys) FetchCardPosition(listPublicID string) ([]uuid.UUID, error) {
 	var position models.CardPosition
-	err := config.DB.Joins("JOIN lists on list.internal_id = card_positions.list_internal_id").
+	err := config.DB.Joins("JOIN lists on list.internal_id = card_position.list_internal_id").
 		Where("list.public_id = ?", listPublicID).Error
 	return position.CardOrder, err
 }
